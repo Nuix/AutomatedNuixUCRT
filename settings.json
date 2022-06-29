@@ -1,0 +1,115 @@
+{
+  "useencryptedcreds":false,
+  "useWindowsCredentials":false,
+  "userName":"",
+  "info":"",
+  "licenseType":"cloud-server",
+  "registryServer":"https://licence-api.nuix.com",
+  "dblocation": "C:\\Users\\users\\Documents\\Nuix\\UCRT - CLS\\Backup",
+  "caseslocations": "C:\\Nuix\\Sample Cases, C:\\Nuix_WORKING\\Cases",
+  "dailycaseslocations": "C:\\Users\\users\\Documents\\Nuix\\Sample Cases",
+  "historiccaseslocations": "C:\\ProgramData\\Nuix\\NuixCases",
+  "nuixversionmapping": [
+    {
+      "CaseVersion": "7.1.60003",
+      "ConsoleVersions": [
+        "7.2.1",
+        "7.2.2",
+        "7.2.3",
+        "7.2.4"
+      ],
+      "ConsoleLocation": "C:\\Program Files\\Nuix\\Nuix 7.2"
+    },
+    {
+      "CaseVersion": "7.5.68935",
+      "ConsoleVersions": [
+        "7.6.0",
+        "7.2.3",
+        "7.2.4",
+        "7.2.6"
+      ],
+      "ConsoleLocation": "C:\\Program Files\\Nuix\\Nuix 7.6"
+    },
+    {
+      "CaseVersion":"7.5.68939",
+      "ConsoleVersions":["7.6.0",
+        "7.2.3",
+        "7.2.4",
+        "7.2.6"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 7.6"
+    },
+    {
+      "CaseVersion":"8.0.0",
+      "ConsoleVersions":["8.0.0"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 8.0"
+    },
+    {
+      "CaseVersion":"8.2.0",
+      "ConsoleVersions":["8.2.0"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 8.2"
+    },
+    {
+      "CaseVersion":"8.5.1",
+      "ConsoleVersions":["8.6.4"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 8.6"
+    },
+    {
+      "CaseVersion":"8.9.1",
+      "ConsoleVersions":["9.0.0.171"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 9.0"
+    },
+	{
+      "CaseVersion":"9.0.0.171",
+      "ConsoleVersions":["9.0.0.171"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 9.0"
+    },
+	{
+      "CaseVersion":"9.4.0",
+      "ConsoleVersions":["9.4.0.105"],
+      "ConsoleLocation":"C:\\Program Files\\Nuix\\Nuix 9.4"
+    }
+  ],
+  "exporttype": "csv",
+  "exportfields": "all",
+  "exportdirectory": "C:\\Users\\users\\Documents\\Nuix\\Automated UCRT",
+  "exportfilename":"myexportfile.csv",
+  "exportcaseinfo": "all",
+  "cleanupfiles": "false",
+  "cleanupfilerange": 30,
+  "cleanupdirectories": "C:\\Users\\users\\Documents\\Nuix\\UCRT - CLS\\Backup,C:\\Users\\users\\Documents\\Nuix\\Automated UCRT",
+  "cleanupfilestype": "*.log,*.csv",
+  "ucrtreportinguser": "nuix-svc",
+  "searchterm":"",
+  "searchtermfile":"C:\\Users\\users\\Documents\\Nuix\\Search.txt",
+  "nuixexportsearchresults":"true",
+  "nuixexporttype":"Case Subset",
+  "nuixexportworkers":2,
+  "nuixexportworkermemory":1024,
+  "exportonly":true,
+  "reportype": "All",
+  "report-run-frequency":"quarterly",
+  "batch-run-frequency":"quarterly",
+  "q1begindate":"4-1",
+  "q1enddate":"6-30",
+  "q2begindate":"7-1",
+  "q2enddate":"9-30",
+  "q3begindate":"10-1",
+  "q3enddate":"12-31",
+  "q4begindate":"1-1",
+  "q4enddate":"3-30",
+  "quarteroffset":"1",
+  "batchloadhistorylookback":"1",
+  "upgradecases": "false",
+  "includedaterange": "false",
+  "includeannotations": "true",
+  "ignorecasehistory":"true",
+  "cleanupdatabase": "false",
+  "cleanupcaseguids": "all",
+  "showsizein": "gb",
+  "decimalpointaccuracy":4,
+  "scripttorun":"C:\\ProgramData\\Nuix\\ProcessingFiles\\UCRT\\automateUCRT.rb",
+  "nuixAppMemory":"Xmx4g",
+  "nuixWorkers":"1",
+  "nuixLicense":"eDiscovery Workstation",
+  "consoleLocations":"C:\\Program Files\\Nuix\\Nuix 7.8\\nuix_console.exe,C:\\Program Files\\Nuix\\Nuix 8.2\\nuix_console.exe,C:\\Program Files\\Nuix\\Nuix 8.4\\nuix_console.exe,C:\\Program Files\\Nuix\\Nuix 8.6\\nuix_console.exe,C:\\Program Files\\Nuix\\Nuix 8.8\\nuix_console.exe,C:\\Program Files\\Nuix\\Nuix 9.0\\nuix_console.exe"
+}
