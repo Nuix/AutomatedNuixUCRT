@@ -1,0 +1,158 @@
+Imports System.Threading
+Module Module1
+    Sub Main()
+        Dim sUserName As String
+        Dim sPassword As String
+        Dim entropy As String = Nothing
+        Dim description As String
+        Dim encrypted As String
+        Dim decrypted As String
+        Dim jsoncontents As String
+        Dim sEncryptedFolderPath As String
+        Dim sCredsFile As String
+        Dim asCredentials() As String
+        Dim asUserName() As String
+        Dim asPassword() As String
+        Dim sAutomateNuixScriptLog As String
+        Dim sMachineName As String
+        Dim jsonsettings As Newtonsoft.Json.Linq.JObject
+        Dim sConsoleLocations As String
+        Dim sLogFileName As String
+        Dim bStatus As Boolean
+        Dim bUseEncryptedCredentials As Boolean
+        Dim bUseWindowsCredentials As Boolean
+        Dim sRunInPath As Boolean
+
+        Dim common As New Common
+
+        sAutomateNuixScriptLog = sEncryptedFolderPath & "\AutomateNuixScriptLog - " & sMachineName & "-" & DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss") & ".log"
+        common.Logger(sAutomateNuixScriptLog, "Path Environmental Variable = " & My.Application.GetEnvironmentVariable("PATH"))
+
+        jsoncontents = My.Computer.FileSystem.ReadAllText("C:\Program Files\Nuix\ScriptAutomate\Settings.json")
+        jsonsettings = Newtonsoft.Json.Linq.JObject.Parse(jsoncontents)
+        bUseEncryptedCredentials = jsonsettings.Item("useencryptedcreds")
+        If bUseEncryptedCredentials = True Then
+            sEncryptedFolderPath = jsonsettings.Item("dblocation").ToString
+            sCredsFile = sEncryptedFolderPath & "\nuixconfig.cfg"
+
+            sMachineName = System.Net.Dns.GetHostName
+
+            encrypted = My.Computer.FileSystem.ReadAllText(sCredsFile)
+            'Call DPAPI To decrypt data.
+            decrypted = DPAPI.Decrypt(encrypted, entropy, description)
+
+            asCredentials = Split(decrypted, ":")
+            asUserName = Split(asCredentials(0), "=")
+            asPassword = Split(asCredentials(1), "=")
+            sUserName = asUserName(1)
+            sPassword = asPassword(1)
+        End If
+        bUseWindowsCredentials = jsonsettings.Item("useWindowsCredentials")
+        If bUseWindowsCredentials = False Then
+            sUserName = jsonsettings.Item("userName")
+            sPassword = jsonsettings.Item("info")
+        Else
+            sUserName = ""
+            sPassword = ""
+        End If
+        sConsoleLocations = jsonsettings.Item("consoleLocations")
+
+        bStatus = blnLaunchNuixConsole(sConsoleLocations, jsonsettings, sAutomateNuixScriptLog, sUserName, sPassword)
+    End Sub
+
+    Public Function blnLaunchNuixConsole(ByVal sConsoleLocations As String, ByVal jsonSettings As Newtonsoft.Json.Linq.JObject, ByVal sLogFileName As String, ByVal sNMSUserName As String, ByVal sNMSUserInfo As String) As Boolean
+        Dim common As New Common
+        Dim sArguments As String
+        Dim sLicenseType As String
+        Dim sRegistryServer As String
+        Dim sNuixLogFileDir As String
+        Dim sScriptToRun As String
+        Dim sLicenseName As String
+        Dim sNuixWorkers As String
+        Dim sNuixAppMemory As String
+        Dim sLicenseShortName As String
+        Dim asConsoleLocations() As String
+        Dim bStatus As Boolean
+
+        blnLaunchNuixConsole = False
+
+        common.Logger(sLogFileName, "Console Location = " & sConsoleLocations)
+        common.Logger(sLogFileName, "jsonSettings = " & jsonSettings.ToString)
+        common.Logger(sLogFileName, "NMSUser Name = " & sNMSUserName)
+        sLicenseType = jsonSettings.Item("licenseType").ToString
+        sRegistryServer = jsonSettings.Item("registryServer").ToString
+        sNuixLogFileDir = jsonSettings.Item("dblocation").ToString & "\logs"
+        sScriptToRun = jsonSettings.Item("scripttorun").ToString
+        sNuixWorkers = jsonSettings.Item("nuixWorkers").ToString
+        sNuixAppMemory = jsonSettings.Item("nuixAppMemory").ToString
+        sLicenseName = jsonSettings.Item("nuixLicense").ToString
+
+        Select Case sLicenseName
+            Case "eDiscovery Workstation"
+                sLicenseShortName = "enterprise-workstation"
+            Case "eDiscovery Reviewer"
+                sLicenseShortName = "enterprise-reviewer"
+            Case "Corporate eDiscovery"
+                sLicenseShortName = "corporate-ediscovery"
+            Case "Investigative Reviewer"
+                sLicenseShortName = "enterprise-workstation"
+            Case "Email Archive Examiner"
+                sLicenseShortName = "email-archive-examiner"
+            Case "eDiscovery ARX"
+                sLicenseShortName = "enterprise-arx"
+            Case "Ultimate Workstation"
+                sLicenseShortName = "ultimate-workstation"
+            Case "Investigation and Response"
+                sLicenseShortName = "law-enforcement-desktop"
+        End Select
+
+        Try
+            asConsoleLocations = Split(sConsoleLocations, ",")
+            For Each consolelocation In asConsoleLocations
+
+                blnLaunchNuixConsole = False
+                sArguments = ""
+
+                Dim nuixProcess As Process
+                nuixProcess = New Process()
+                nuixProcess.StartInfo.FileName = consolelocation
+
+                If sRegistryServer <> vbNullString Then
+                    sArguments = sArguments & " -Dnuix.registry.servers=" & Trim(sRegistryServer)
+                End If
+
+                If sLicenseType = "Desktop" Then
+                    sArguments = sArguments & " -licencesourcetype dongle"
+                ElseIf sLicenseType = "Desktop (dongleless)" Then
+                    sArguments = sArguments & " -Dnuix.licence.handlers=system"
+                ElseIf sLicenseType = "server" Then
+                    sArguments = sArguments & " -licencesourcetype server -licencesourcelocation " & sRegistryServer & " -licencetype " & sLicenseShortName
+                ElseIf sLicenseType = "cloud-server" Then
+                    sArguments = sArguments & " -licencesourcetype cloud-server -licencesourcelocation " & sRegistryServer & " -licencetype " & sLicenseShortName
+                End If
+
+                sArguments = sArguments & " -licenceworkers " & sNuixWorkers & " -" & sNuixAppMemory & " -Dnuix.logdir=" & """" & sNuixLogFileDir & """" & " "
+                sArguments = sArguments & """" & sScriptToRun & """"
+
+                common.Logger(sLogFileName, "Arguments - " & sArguments)
+                nuixProcess.StartInfo.Arguments = sArguments
+                If sNMSUserName <> "" Then
+                    nuixProcess.StartInfo.EnvironmentVariables.Add("NUIX_USERNAME", sNMSUserName)
+                    nuixProcess.StartInfo.EnvironmentVariables.Add("NUIX_PASSWORD", sNMSUserInfo)
+                End If
+                nuixProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden
+                nuixProcess.StartInfo.CreateNoWindow = True
+                nuixProcess.StartInfo.UseShellExecute = False
+                nuixProcess.StartInfo.RedirectStandardOutput = False
+                nuixProcess.StartInfo.RedirectStandardError = False
+                nuixProcess.StartInfo.RedirectStandardInput = False
+                nuixProcess.Start()
+                nuixProcess.WaitForExit()
+            Next
+            blnLaunchNuixConsole = True
+        Catch ex As Exception
+            common.Logger(sLogFileName, ex.ToString)
+            blnLaunchNuixConsole = False
+        End Try
+    End Function
+End Module
