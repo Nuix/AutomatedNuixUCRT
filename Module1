@@ -25,29 +25,44 @@ Module Module1
 
         Dim common As New Common
 
+        ' create a new common Logger 
         sAutomateNuixScriptLog = sEncryptedFolderPath & "\AutomateNuixScriptLog - " & sMachineName & "-" & DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss") & ".log"
         common.Logger(sAutomateNuixScriptLog, "Path Environmental Variable = " & My.Application.GetEnvironmentVariable("PATH"))
 
-        jsoncontents = My.Computer.FileSystem.ReadAllText("C:\Program Files\Nuix\ScriptAutomate\Settings.json")
+        ' read in contents of the Settings.json file located in the C:\ProgramData\Nuix\ProcessingFiles\ScriptAutomate folder
+        jsoncontents = My.Computer.FileSystem.ReadAllText("C:\ProgramData\Nuix\ProcessingFiles\ScriptAutomate\Settings.json")
         jsonsettings = Newtonsoft.Json.Linq.JObject.Parse(jsoncontents)
+        ' check the value of the useencryptedcreds
         bUseEncryptedCredentials = jsonsettings.Item("useencryptedcreds")
+        ' if the useencryptedcreds is true
         If bUseEncryptedCredentials = True Then
+            ' get the location of the encrypted credentials file
             sEncryptedFolderPath = jsonsettings.Item("dblocation").ToString
+            ' the encrypted credentials needs to be in a file called nuixconfig.cfg located in the folder referenced by dblocation
             sCredsFile = sEncryptedFolderPath & "\nuixconfig.cfg"
 
-            sMachineName = System.Net.Dns.GetHostName
+            If My.Computer.FileSystem.FileExists(sCredsFile) Then
+                common.Logger(sAutomateNuixScriptLog, "Decrypting credentials")
+                ' get the machine name
+                sMachineName = System.Net.Dns.GetHostName
 
-            encrypted = My.Computer.FileSystem.ReadAllText(sCredsFile)
-            'Call DPAPI To decrypt data.
-            decrypted = DPAPI.Decrypt(encrypted, entropy, description)
+                ' read in the 
+                encrypted = My.Computer.FileSystem.ReadAllText(sCredsFile)
+                'Call DPAPI To decrypt data.
+                decrypted = DPAPI.Decrypt(encrypted, entropy, description)
 
-            asCredentials = Split(decrypted, ":")
-            asUserName = Split(asCredentials(0), "=")
-            asPassword = Split(asCredentials(1), "=")
-            sUserName = asUserName(1)
-            sPassword = asPassword(1)
+                asCredentials = Split(decrypted, ":")
+                asUserName = Split(asCredentials(0), "=")
+                asPassword = Split(asCredentials(1), "=")
+                sUserName = asUserName(1)
+                sPassword = asPassword(1)
+            Else
+                common.Logger(sAutomateNuixScriptLog, "The credentials file was not located in the " & sEncryptedFolderPath & " folder.  Please check to ensure the credentials file was created correctly and in the correct locations.")
+            End If
         End If
+        ' get the value of useWindowsCredentials
         bUseWindowsCredentials = jsonsettings.Item("useWindowsCredentials")
+        ' if useWindowsCredentials is False then get the username and password that were entered in the settings.json file
         If bUseWindowsCredentials = False Then
             sUserName = jsonsettings.Item("userName")
             sPassword = jsonsettings.Item("info")
@@ -55,9 +70,18 @@ Module Module1
             sUserName = ""
             sPassword = ""
         End If
+
+        ' get all the version of the nuix_console set in the settings json file
         sConsoleLocations = jsonsettings.Item("consoleLocations")
+        common.Logger(sAutomateNuixScriptLog, "Console Locations to use : " & sConsoleLocations)
+        common.Logger(sAutomateNuixScriptLog, "Calling Launch Nuix Console Function")
 
         bStatus = blnLaunchNuixConsole(sConsoleLocations, jsonsettings, sAutomateNuixScriptLog, sUserName, sPassword)
+        If bStatus = True Then
+            common.Logger(sAutomateNuixScriptLog, "Successfully launched " & sConsoleLocations)
+        Else
+            common.Logger(sAutomateNuixScriptLog, "Error: There was an error launching " & sConsoleLocations & ". Please check the exceptions above")
+        End If
     End Sub
 
     Public Function blnLaunchNuixConsole(ByVal sConsoleLocations As String, ByVal jsonSettings As Newtonsoft.Json.Linq.JObject, ByVal sLogFileName As String, ByVal sNMSUserName As String, ByVal sNMSUserInfo As String) As Boolean
@@ -87,6 +111,7 @@ Module Module1
         sNuixAppMemory = jsonSettings.Item("nuixAppMemory").ToString
         sLicenseName = jsonSettings.Item("nuixLicense").ToString
 
+        ' get the appropriate license 
         Select Case sLicenseName
             Case "eDiscovery Workstation"
                 sLicenseShortName = "enterprise-workstation"
@@ -106,21 +131,29 @@ Module Module1
                 sLicenseShortName = "law-enforcement-desktop"
         End Select
 
+        ' build and exception hanlder to capture any exceptions
         Try
+            ' get all the console locations and put into an array
             asConsoleLocations = Split(sConsoleLocations, ",")
+            ' loop over each version of the nuix console that was set in the settings.json file
             For Each consolelocation In asConsoleLocations
-
+                ' set the return value for the blnLaunchNuixConsole to False
                 blnLaunchNuixConsole = False
+                ' set the arguments variable to an empty string
                 sArguments = ""
 
+                ' create a new Windows Process for the version of nuix the will be launched
                 Dim nuixProcess As Process
                 nuixProcess = New Process()
+                ' set the startinfo to the version of the nuix console that will be launched
                 nuixProcess.StartInfo.FileName = consolelocation
 
+                ' if a registry server was specified in the json file use it with the appropriate switch
                 If sRegistryServer <> vbNullString Then
                     sArguments = sArguments & " -Dnuix.registry.servers=" & Trim(sRegistryServer)
                 End If
 
+                ' set the licencesource type based on what was set in the json file
                 If sLicenseType = "Desktop" Then
                     sArguments = sArguments & " -licencesourcetype dongle"
                 ElseIf sLicenseType = "Desktop (dongleless)" Then
@@ -131,26 +164,36 @@ Module Module1
                     sArguments = sArguments & " -licencesourcetype cloud-server -licencesourcelocation " & sRegistryServer & " -licencetype " & sLicenseShortName
                 End If
 
+                ' set the other arguments for the nuix startup
                 sArguments = sArguments & " -licenceworkers " & sNuixWorkers & " -" & sNuixAppMemory & " -Dnuix.logdir=" & """" & sNuixLogFileDir & """" & " "
+                ' add the script to run as the last attribute
                 sArguments = sArguments & """" & sScriptToRun & """"
 
+                ' write the argument to the logger
                 common.Logger(sLogFileName, "Arguments - " & sArguments)
+                ' set the arguments on the nuixProcess
                 nuixProcess.StartInfo.Arguments = sArguments
+                ' if a username and password were specified or encrypted credentials were used set the environment variable appropriately
                 If sNMSUserName <> "" Then
                     nuixProcess.StartInfo.EnvironmentVariables.Add("NUIX_USERNAME", sNMSUserName)
                     nuixProcess.StartInfo.EnvironmentVariables.Add("NUIX_PASSWORD", sNMSUserInfo)
                 End If
+                ' set the window style to Hidden so there is no command window shown
                 nuixProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden
+                ' set the createnowindow to true so no command window is created
                 nuixProcess.StartInfo.CreateNoWindow = True
                 nuixProcess.StartInfo.UseShellExecute = False
                 nuixProcess.StartInfo.RedirectStandardOutput = False
                 nuixProcess.StartInfo.RedirectStandardError = False
                 nuixProcess.StartInfo.RedirectStandardInput = False
+                ' start the nuix_console.exe 
                 nuixProcess.Start()
+                ' wait until the process finishes before exiting
                 nuixProcess.WaitForExit()
             Next
             blnLaunchNuixConsole = True
         Catch ex As Exception
+            'if any exception was thrown write it to the log
             common.Logger(sLogFileName, ex.ToString)
             blnLaunchNuixConsole = False
         End Try
