@@ -4,13 +4,16 @@ Imports System.Text
 
 Public Class Common
     Public Sub Logger(ByVal sLogFileName As String, ByVal sLogMessage As String)
+        ' Create a new StreamWriter
         Dim Log As StreamWriter
 
+        ' if the logfile already exists append to the log
         If (File.Exists(sLogFileName)) Then
             Log = File.AppendText(sLogFileName)
             Log.WriteLine(DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss") & " - " & sLogMessage)
 
             Log.Close()
+            ' if the log file does not exists create it and write to the log
         Else
             Try
                 Log = New StreamWriter(sLogFileName)
@@ -28,6 +31,7 @@ Public Class Common
         blnCheckIfProcessIsRunning = False
 
         Try
+            ' if there is a process referenced by the processID then the process is running return True else return False
             NuixProcess = Process.GetProcessById(CInt(sProcessID))
             blnCheckIfProcessIsRunning = True
         Catch ex As Exception
