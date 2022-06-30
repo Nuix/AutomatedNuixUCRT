@@ -1,0 +1,37 @@
+Imports System
+Imports System.IO
+Imports System.Text
+
+Public Class Common
+    Public Sub Logger(ByVal sLogFileName As String, ByVal sLogMessage As String)
+        Dim Log As StreamWriter
+
+        If (File.Exists(sLogFileName)) Then
+            Log = File.AppendText(sLogFileName)
+            Log.WriteLine(DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss") & " - " & sLogMessage)
+
+            Log.Close()
+        Else
+            Try
+                Log = New StreamWriter(sLogFileName)
+                Log.WriteLine(DateTime.Now.ToString("yyyy-MM-dd hh-mm-ss") & " - " & sLogMessage)
+                Log.Close()
+            Catch ex As Exception
+
+            End Try
+        End If
+    End Sub
+    Public Function blnCheckIfProcessIsRunning(ByVal sProcessID As String) As Boolean
+
+        Dim NuixProcess As System.Diagnostics.Process
+
+        blnCheckIfProcessIsRunning = False
+
+        Try
+            NuixProcess = Process.GetProcessById(CInt(sProcessID))
+            blnCheckIfProcessIsRunning = True
+        Catch ex As Exception
+            blnCheckIfProcessIsRunning = False
+        End Try
+    End Function
+End Class
